@@ -30,3 +30,11 @@ module RubyLisp
     end
   end
 end
+
+# Can go away once we implement an actual writer instead of relying on
+# inspect
+class Symbol
+  def inspect
+    to_s
+  end
+end

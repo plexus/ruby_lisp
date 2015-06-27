@@ -8,7 +8,7 @@ module RubyLisp
       case char
       when '('
         read_list(io)
-      when '1'..'9'
+      when '0'..'9'
         read_number(io)
       when SYM_REGEXP
         read_symbol(io)
