@@ -17,19 +17,25 @@ end
 
 $l.exec(DATA)
 
-begin
-  loop do
-    code = Readline::readline '>> '
-    Readline::HISTORY.push code
-    begin
-      puts $l.exec(code).inspect
-    rescue => e
-      puts e
-      puts e.backtrace
+if ARGV.any?
+  $l.exec(File.open(Pathname(ARGV.first).expand_path))
+else
+
+  begin
+    loop do
+      code = Readline::readline '>> '
+      Readline::HISTORY.push code
+      begin
+        puts $l.exec(code).inspect
+      rescue => e
+        puts e
+        puts e.backtrace
+      end
     end
+  ensure
+    histfile.write(Readline::HISTORY.to_a.join("\n"))
   end
-ensure
-  histfile.write(Readline::HISTORY.to_a.join("\n"))
+
 end
 
 __END__
@@ -62,3 +68,6 @@ __END__
               (cons (map car pairs)
                     body))
         (map car (map cdr pairs))))
+
+(defun println (expr)
+  (rb-send (rb-const 'Kernel) 'puts expr))
