@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+
+require 'pathname'
+require 'readline'
+
+$:.unshift(Pathname(__FILE__).dirname.parent.join('lib'))
+
+require 'ruby_lisp'
+
+$l=RubyLisp::Core.new
+histfile = Pathname('~/.ruby-lisp-history').expand_path
+if histfile.exist?
+  histfile.read.split("\n").each do |l|
+    Readline::HISTORY.push l
+  end
+end
+
+$l.exec(DATA)
+
+begin
+  loop do
+    code = Readline::readline '>> '
+    Readline::HISTORY.push code
+    begin
+      puts $l.exec(code).inspect
+    rescue => e
+      puts e
+      puts e.backtrace
+    end
+  end
+ensure
+  histfile.write(Readline::HISTORY.to_a.join("\n"))
+end
+
+__END__
+
+(defmacro defun (name args body)
+  (list 'def (list 'quote name) (list 'lambda args body)))
+
+(defun last (l)
+  (if (nil? (cdr l))
+      (car l)
+    (last (cdr l))))
+
+(defun reverse1 (l c)
+  (if (nil? l)
+      c
+    (reverse1 (cdr l) (cons (car l) c))))
+
+(defun reverse (l)
+  (reverse1 l nil))
+
+(defun map (fn coll)
+  (reverse
+   (reduce (lambda (c e)
+             (cons (fn e) c))
+           nil
+           coll)))
+
+(defmacro let (pairs body)
+  (cons (cons 'lambda
+              (cons (map car pairs)
+                    body))
+        (map car (map cdr pairs))))

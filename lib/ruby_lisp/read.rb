@@ -3,8 +3,12 @@ module RubyLisp
     SYM_REGEXP = /[a-zA-Z0-9:\/\*!\?_+=-]/
 
     def read(io)
+      skip_whitespace(io)
+      return if io.eof?
+
       char = io.getc
       io.ungetc(char)
+
       case char
       when '('
         read_list(io)
@@ -87,6 +91,14 @@ module RubyLisp
       io.ungetc('(')
       cdr = read(io)
       cons(car, cdr)
+    end
+
+    def skip_whitespace(io)
+      char = io.getc
+      while [" ", "\n", "\t"].include?(char)
+        char = io.getc
+      end
+      io.ungetc(char) if char
     end
 
   end

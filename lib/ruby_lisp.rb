@@ -20,8 +20,15 @@ module RubyLisp
       @macros = {}
     end
 
-    def exec(string)
-      eval(macroexpand(read(StringIO.new(string))))
+    def exec(io)
+      if io.is_a? String
+        io = StringIO.new(io)
+      end
+      ret = nil
+      until io.eof?
+        ret = eval(macroexpand(read(io)))
+      end
+      ret
     end
 
     def resolve(symbol)
@@ -156,45 +163,3 @@ module RubyLisp
     end
   end
 end
-
-
-if $0 == __FILE__
-  require 'readline'
-  require 'pathname'
-
-  $l=RubyLisp::Core.new
-  histfile = Pathname('~/.ruby-lisp-history').expand_path
-  if histfile.exist?
-    histfile.read.split("\n").each do |l|
-      Readline::HISTORY.push l
-    end
-  end
-
-  begin
-    loop do
-      code = Readline::readline '>> '
-      Readline::HISTORY.push code
-      begin
-        puts $l.exec(code).inspect
-      rescue => e
-        puts e
-        puts e.backtrace
-      end
-    end
-  ensure
-    histfile.write(Readline::HISTORY.to_a.join("\n"))
-  end
-end
-
-__END__
-
-(defmacro defn (name args body) (list 'def (list 'quote name) (list 'lambda args body)))
-
-(defn last (l) (if (nil? (cdr l)) (car l) (last (cdr l))))
-
-(defn reverse1 (l c) (if (nil? l) c (reverse1 (cdr l) (cons (car l) c))))
-(defn reverse (l) (reverse1 l nil))
-
-(defn map (fn coll) (reverse (reduce (lambda (c e) (cons (fn e) c)) nil coll)))
-
-(defmacro let (pairs body) (cons (cons 'lambda (cons (map car pairs) body)) (map car (map cdr pairs))))
