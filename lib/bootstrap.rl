@@ -42,11 +42,11 @@
   (list 'defun name '(o)
         (list 'rb-send 'o (list 'quote name))))
 
-(defun rb-send* (const method args)
+(defun rb-send-const (const method args)
   (apply rb-send (cons (rb-const const) (cons method args))))
 
 (defun rb-new (class args)
   (rb-send* class 'new args))
 
 (defun require (file)
-  (rb-send* 'Kernel 'require (list file)))
+  (rb-send-const 'Kernel 'require (list file)))
