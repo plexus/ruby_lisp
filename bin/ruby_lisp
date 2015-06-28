@@ -3,7 +3,9 @@
 require 'pathname'
 require 'readline'
 
-$:.unshift(Pathname(__FILE__).dirname.parent.join('lib'))
+ROOT = Pathname(__FILE__).dirname.parent
+
+$:.unshift(ROOT.join('lib'))
 
 require 'ruby_lisp'
 
@@ -15,10 +17,10 @@ if histfile.exist?
   end
 end
 
-$l.exec(DATA)
+$l.exec(File.read(ROOT.join('lib/bootstrap.rl')))
 
 if ARGV.any?
-  $l.exec(File.open(Pathname(ARGV.first).expand_path))
+  $l.exec(File.read(Pathname(ARGV.first).expand_path))
 else
 
   begin
@@ -37,37 +39,3 @@ else
   end
 
 end
-
-__END__
-
-(defmacro defun (name args body)
-  (list 'def (list 'quote name) (list 'lambda args body)))
-
-(defun last (l)
-  (if (nil? (cdr l))
-      (car l)
-    (last (cdr l))))
-
-(defun reverse1 (l c)
-  (if (nil? l)
-      c
-    (reverse1 (cdr l) (cons (car l) c))))
-
-(defun reverse (l)
-  (reverse1 l nil))
-
-(defun map (fn coll)
-  (reverse
-   (reduce (lambda (c e)
-             (cons (fn e) c))
-           nil
-           coll)))
-
-(defmacro let (pairs body)
-  (cons (cons 'lambda
-              (cons (map car pairs)
-                    body))
-        (map car (map cdr pairs))))
-
-(defun println (expr)
-  (rb-send (rb-const 'Kernel) 'puts expr))

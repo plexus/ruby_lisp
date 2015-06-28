@@ -35,7 +35,7 @@ module RubyLisp
       @binding.fetch(symbol) { public_method(symbol) }
     end
 
-    def def(symbol, value)
+    def define(symbol, value)
       @binding[symbol] = value
     end
 
@@ -43,7 +43,7 @@ module RubyLisp
       self.class.new(@binding.merge(bind))
     end
 
-    def apply(callable, *args)
+    def apply(callable, args)
       callable.call(*args)
     end
 
@@ -85,8 +85,7 @@ module RubyLisp
           end
           r
         else
-          args = sexp.each.map(&method(:eval))
-          apply(*args)
+          apply(eval(sexp.car), sexp.cdr.map(&method(:eval)))
         end
       end
     end
@@ -98,7 +97,7 @@ module RubyLisp
 
       macro = @macros[first]
       if macro
-        macroexpand(apply(macro, *sexp.cdr.each))
+        macroexpand(apply(macro, sexp.cdr.each))
       else
         cons(sexp.car, macroexpand(sexp.cdr))
       end

@@ -6,10 +6,7 @@ module RubyLisp
       skip_whitespace(io)
       return if io.eof?
 
-      char = io.getc
-      io.ungetc(char)
-
-      case char
+      case peek(io)
       when '('
         read_list(io)
       when '0'..'9'
@@ -79,6 +76,15 @@ module RubyLisp
 
     def read_list(io)
       assert_pop io, '('
+      skip_whitespace(io)
+
+      char = peek(io)
+      if char == ')'
+        # empty list '()
+        assert_pop io, ')'
+        return
+      end
+
       car = read(io)
       char = io.getc
       case char
@@ -99,6 +105,12 @@ module RubyLisp
         char = io.getc
       end
       io.ungetc(char) if char
+    end
+
+    def peek(io)
+      io.getc.tap do |c|
+        io.ungetc(c)
+      end
     end
 
   end
