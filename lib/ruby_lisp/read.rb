@@ -1,6 +1,8 @@
 module RubyLisp
+  UnterminatedInput = Class.new(StandardError)
+
   module Read
-    SYM_REGEXP = /[a-zA-Z0-9:\/\*!\?_+=-]/
+    SYM_REGEXP = /[a-zA-Z0-9:\/\*!\?_+=\[\]-]/
 
     def read(io)
       skip_whitespace(io)
@@ -17,7 +19,7 @@ module RubyLisp
         read_string(io)
       when "'"
         assert_pop io,  "'"
-        list(:quote, read(io))
+        Cons.new(:quote, Cons.new(read(io), nil))
       end
     end
 
@@ -89,14 +91,14 @@ module RubyLisp
       char = io.getc
       case char
       when nil
-        raise "List not terminated"
+        raise UnterminatedInput
       when ')'
-        return cons(car, nil)
+        return Cons.new(car, nil)
       end
 
       io.ungetc('(')
       cdr = read(io)
-      cons(car, cdr)
+      Cons.new(car, cdr)
     end
 
     def skip_whitespace(io)

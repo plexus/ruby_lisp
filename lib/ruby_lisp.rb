@@ -4,13 +4,48 @@ require 'ruby_lisp/read'
 require 'ruby_lisp/cons'
 
 
-Lambda = Struct.new(:env, :arg_names, :body) do
-  def call(*args)
-    env.merge(arg_names.zip(args).to_h).eval(body)
-  end
-end
-
 module RubyLisp
+
+  class StackException < StandardError
+    attr_reader :callable, :args, :source
+
+    def initialize(callable, args, source)
+      @callable, @args, @source = callable, args, source
+    end
+
+    def to_s
+      [
+        [@callable.inspect, @args.inspect].join,
+        source.is_a?(StackException) ? source : [source.message, source.backtrace].join("\n")
+      ].join("\n")
+    end
+  end
+
+  Lambda = Struct.new(:env, :arg_names, :body) do
+    def call(*args)
+      names     = arg_names.to_a
+      arity     = names.length
+      last_name = names.last.to_s
+
+      if last_name.start_with?('*')
+        # splat varargs
+        new_binding = names.take(arity - 1).zip(args.take(arity - 1)).to_h
+        new_binding[last_name[1..-1].to_sym] = env.list(*args.drop(arity - 1))
+      else
+        new_binding = names.zip(args).to_h
+      end
+
+      env.merge(new_binding).eval(body)
+    end
+
+    def to_proc
+      public_method(:call).to_proc
+    end
+
+    def inspect
+      Cons.new(:lambda, Cons.new(arg_names, Cons.new(body, nil))).inspect
+    end
+  end
 
   class Core
     include Read
@@ -29,6 +64,8 @@ module RubyLisp
         ret = eval(macroexpand(read(io)))
       end
       ret
+    rescue StackException => e
+      puts e
     end
 
     def resolve(symbol)
@@ -45,6 +82,8 @@ module RubyLisp
 
     def apply(callable, args)
       callable.call(*args)
+    rescue => ex
+      raise StackException.new(callable, args, ex)
     end
 
     def eval(sexp)
@@ -139,7 +178,9 @@ module RubyLisp
       define_method(s) {|*args| args.inject(s) }
     end
 
+
     def nth(list, n)
+      return if list.nil?
       if n == 0
         list.car
       else
@@ -155,6 +196,12 @@ module RubyLisp
 
     define_method :"rb-send" do |obj, method, *args|
       obj.public_send(method, *args)
+    end
+
+    define_method :"rb-send-block" do |obj, method, *args|
+      block = args.last
+      real_args = args.take(args.length - 1)
+      obj.public_send(method, *real_args, &block)
     end
 
     define_method :"rb-const" do |name|

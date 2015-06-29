@@ -24,12 +24,20 @@ if ARGV.any?
 else
 
   begin
+    buffer = ''
+    prompt = '>> '
     loop do
-      code = Readline::readline '>> '
-      Readline::HISTORY.push code
+      line = Readline::readline(prompt)
+      buffer << "\n" << line
+      prompt = '>> '
+      Readline::HISTORY.push line
       begin
-        puts $l.exec(code).inspect
+        puts $l.exec(buffer).inspect
+        buffer = ''
+      rescue RubyLisp::UnterminatedInput => e
+        prompt = '.. '
       rescue => e
+        buffer = ''
         puts e
         puts e.backtrace
       end
