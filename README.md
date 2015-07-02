@@ -14,8 +14,8 @@ Run `bin/ruby_lisp` to get a REPL, or pass it a filename to execute the file
 
 Example:
 
-```
-(require "net/http")
+``` lisp
+(rb-require "net/http")
 
 (defun uri (u)
   (rb-send-const 'Kernel 'URI u))
